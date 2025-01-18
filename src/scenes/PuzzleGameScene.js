@@ -131,6 +131,7 @@ export default class PuzzleGameScene extends Phaser.Scene {
             }
         }
     
+        
         // Debugging: Log the initial state
         console.log("Puzzle initialized. Empty block at:", this.emptyBlockPosition);
     }
