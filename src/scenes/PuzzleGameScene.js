@@ -49,7 +49,12 @@ export default class PuzzleGameScene extends Phaser.Scene {
     startGame() {
         // Set a random color for the puzzle and preview
         this.puzzleColor = Phaser.Math.Between(1, 7);
-
+    
+        // Ensure the puzzle is solvable
+        while (!this.isSolvable()) {
+            this.puzzleColor = Phaser.Math.Between(1, 7); // Try a different color
+        }
+    
         // Clear previous preview and puzzle if they exist
         if (this.previewGroup) {
             this.previewGroup.clear(true, true);  // Remove all preview images
@@ -57,10 +62,34 @@ export default class PuzzleGameScene extends Phaser.Scene {
         if (this.puzzleGroup) {
             this.puzzleGroup.clear(true, true);  // Remove all puzzle tiles
         }
-
+    
         // Create the new preview and puzzle with the selected color
         this.createPreview();
         this.setupPuzzle();
+    }
+
+    isSolvable() {
+        // Count inversions
+        let inversions = 0;
+        const puzzleKeys = [];
+        for (let variant = 1; variant <= 8; variant++) {
+            puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
+        }
+        const positions = puzzleKeys.concat(null); // Add null for the empty block
+    
+        for (let i = 0; i < positions.length - 1; i++) {
+            for (let j = i + 1; j < positions.length; j++) {
+                if (positions[i] && positions[j] && positions[i].localeCompare(positions[j]) > 0) {
+                    inversions++;
+                }
+            }
+        }
+    
+        // Determine the row of the empty space (1-based index)
+        const emptyRow = this.emptyBlockPosition.row + 1; // Assuming emptyBlockPosition is 0-based
+    
+        // Check solvability condition
+        return (inversions + emptyRow) % 2 === 0;
     }
 
     createPreview() {
@@ -148,19 +177,11 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 // Move the tiles visually
                 tileData.tile.x = this.blockX + emptyCol * (this.blockSize + this.blockGap);
                 tileData.tile.y = this.blockY + emptyRow * (this.blockSize + this.blockGap);
-    
-                // emptyTileData.tile.x = this.blockX + col * (this.blockSize + this.blockGap);
-                // emptyTileData.tile.y = this.blockY + row * (this.blockSize + this.blockGap);
-
+  
                 tileData.tile.removeAllListeners('pointerdown');
                 tileData.tile.setInteractive().on('pointerdown', () => {
                     this.moveTile(emptyRow, emptyCol);  // Move the empty block to this tile's position
                 });
-    
-                // emptyTileData.tile.removeAllListeners('pointerdown');
-                // emptyTileData.tile.setInteractive().on('pointerdown', () => {
-                //     this.moveTile(row, col);  // Move this tile to the empty space
-                // });
 
                 this.puzzleGrid[emptyRow][emptyCol] = tileData; // Move clicked tile to empty space
                 this.puzzleGrid[row][col] = emptyTileData; // Move empty tile to clicked tile's position
