@@ -49,12 +49,7 @@ export default class PuzzleGameScene extends Phaser.Scene {
     startGame() {
         // Set a random color for the puzzle and preview
         this.puzzleColor = Phaser.Math.Between(1, 7);
-    
-        // Ensure the puzzle is solvable
-        while (!this.isSolvable()) {
-            this.puzzleColor = Phaser.Math.Between(1, 7); // Try a different color
-        }
-    
+
         // Clear previous preview and puzzle if they exist
         if (this.previewGroup) {
             this.previewGroup.clear(true, true);  // Remove all preview images
@@ -62,34 +57,10 @@ export default class PuzzleGameScene extends Phaser.Scene {
         if (this.puzzleGroup) {
             this.puzzleGroup.clear(true, true);  // Remove all puzzle tiles
         }
-    
+
         // Create the new preview and puzzle with the selected color
         this.createPreview();
         this.setupPuzzle();
-    }
-
-    isSolvable() {
-        // Count inversions
-        let inversions = 0;
-        const puzzleKeys = [];
-        for (let variant = 1; variant <= 8; variant++) {
-            puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
-        }
-        const positions = puzzleKeys.concat(null); // Add null for the empty block
-    
-        for (let i = 0; i < positions.length - 1; i++) {
-            for (let j = i + 1; j < positions.length; j++) {
-                if (positions[i] && positions[j] && positions[i].localeCompare(positions[j]) > 0) {
-                    inversions++;
-                }
-            }
-        }
-    
-        // Determine the row of the empty space (1-based index)
-        const emptyRow = this.emptyBlockPosition.row + 1; // Assuming emptyBlockPosition is 0-based
-    
-        // Check solvability condition
-        return (inversions + emptyRow) % 2 === 0;
     }
 
     createPreview() {
@@ -110,36 +81,45 @@ export default class PuzzleGameScene extends Phaser.Scene {
         var startX = this.blockX;
         var startY = this.blockY;
         var blockSize = this.blockSize;
-
+    
         // Generate the puzzle keys for the selected color
         var puzzleKeys = [];
         for (var variant = 1; variant <= 8; variant++) {
             puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
         }
-
+    
         // Shuffle keys and add the empty block
         Phaser.Utils.Array.Shuffle(puzzleKeys);
-        var positions = puzzleKeys.concat(null); // Add null for the empty block
-        Phaser.Utils.Array.Shuffle(positions); // Shuffle again for randomness
-
+        var emptyIndex = Phaser.Math.Between(0, 8); // Random index for the empty block
+        var positions = [];
+    
+        for (var i = 0; i < 9; i++) {
+            if (i === emptyIndex) {
+                positions.push(null); // Add null for the empty block
+            } else {
+                positions.push(puzzleKeys.pop()); // Add shuffled puzzle key
+            }
+        }
+    
         // Reset the puzzle group and the grid
         this.puzzleGroup = this.add.group();
         this.puzzleGrid = Array(3).fill().map(() => Array(3).fill(null)); // 2D array for 3x3 grid
-
+    
         // Place the tiles and initialize the empty block
         for (var row = 0; row < 3; row++) {
             for (var col = 0; col < 3; col++) {
                 var index = row * 3 + col;
-                if (positions[index]) {
-                    var key = positions[index];
+                var key = positions[index];
+    
+                if (key !== null) {
                     var x = startX + col * (blockSize + this.blockGap);
                     var y = startY + row * (blockSize + this.blockGap);
-
+    
                     var tile = this.add.image(x, y, key).setDisplaySize(blockSize, blockSize).setOrigin(0).setInteractive();
                     this.puzzleGrid[row][col] = { tile: tile, key: key };
-
+    
                     this.puzzleGroup.add(tile);
-
+    
                     ((r, c) => {
                         tile.on('pointerdown', () => {
                             this.moveTile(r, c);
@@ -150,11 +130,11 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 }
             }
         }
-
+    
         // Debugging: Log the initial state
         console.log("Puzzle initialized. Empty block at:", this.emptyBlockPosition);
-
     }
+        
 
     moveTile(row, col) {
         // Check if the clicked tile is adjacent to the empty block
@@ -177,11 +157,19 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 // Move the tiles visually
                 tileData.tile.x = this.blockX + emptyCol * (this.blockSize + this.blockGap);
                 tileData.tile.y = this.blockY + emptyRow * (this.blockSize + this.blockGap);
-  
+    
+                // emptyTileData.tile.x = this.blockX + col * (this.blockSize + this.blockGap);
+                // emptyTileData.tile.y = this.blockY + row * (this.blockSize + this.blockGap);
+
                 tileData.tile.removeAllListeners('pointerdown');
                 tileData.tile.setInteractive().on('pointerdown', () => {
                     this.moveTile(emptyRow, emptyCol);  // Move the empty block to this tile's position
                 });
+    
+                // emptyTileData.tile.removeAllListeners('pointerdown');
+                // emptyTileData.tile.setInteractive().on('pointerdown', () => {
+                //     this.moveTile(row, col);  // Move this tile to the empty space
+                // });
 
                 this.puzzleGrid[emptyRow][emptyCol] = tileData; // Move clicked tile to empty space
                 this.puzzleGrid[row][col] = emptyTileData; // Move empty tile to clicked tile's position
@@ -189,9 +177,31 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 // Debugging: Log the state after movement
                 console.log("Moved tile at position", row, col, "to empty space at", emptyRow, emptyCol);
                 console.log("Puzzle grid state:", this.puzzleGrid);
+
+                // Check if puzzle is solved after each move
+                if (this.isPuzzleSolved()) {
+                    console.log("Congratulations! Puzzle solved.");
+                }
             }
         } else {
             console.log("Tile at", row, col, "is not adjacent to empty space.");
         }
-    }    
+    }   
+    
+    isPuzzleSolved() {
+        // Check if each tile is in the correct position
+        var variant = 1;
+        for (var row = 0; row < 3; row++) {
+            for (var col = 0; col < 3; col++) {
+                if (this.puzzleGrid[row][col]) {
+                    var key = 'color_' + this.puzzleColor + '_variant_' + variant;
+                    if (this.puzzleGrid[row][col].key !== key) {
+                        return false; // Puzzle not solved
+                    }
+                    variant++;
+                }
+            }
+        }
+        return true; // Puzzle solved
+    }
 }
