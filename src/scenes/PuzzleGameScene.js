@@ -77,28 +77,183 @@ export default class PuzzleGameScene extends Phaser.Scene {
         }
     }
 
+    // setupPuzzle() {
+    //     var startX = this.blockX;
+    //     var startY = this.blockY;
+    //     var blockSize = this.blockSize;
+    
+    //     // Generate the puzzle keys for the selected color
+    //     var puzzleKeys = [];
+    //     for (var variant = 1; variant <= 8; variant++) {
+    //         puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
+    //     }
+    
+    //     // Shuffle keys and add the empty block
+    //     Phaser.Utils.Array.Shuffle(puzzleKeys);
+    //     var emptyIndex = Phaser.Math.Between(0, 8); // Random index for the empty block
+    //     var positions = [];
+    
+    //     for (var i = 0; i < 9; i++) {
+    //         if (i === emptyIndex) {
+    //             positions.push(null); // Add null for the empty block
+    //         } else {
+    //             positions.push(puzzleKeys.pop()); // Add shuffled puzzle key
+    //         }
+    //     }
+    
+    //     // Reset the puzzle group and the grid
+    //     this.puzzleGroup = this.add.group();
+    //     this.puzzleGrid = Array(3).fill().map(() => Array(3).fill(null)); // 2D array for 3x3 grid
+    
+    //     // Place the tiles and initialize the empty block
+    //     for (var row = 0; row < 3; row++) {
+    //         for (var col = 0; col < 3; col++) {
+    //             var index = row * 3 + col;
+    //             var key = positions[index];
+    
+    //             if (key !== null) {
+    //                 var x = startX + col * (blockSize + this.blockGap);
+    //                 var y = startY + row * (blockSize + this.blockGap);
+    
+    //                 var tile = this.add.image(x, y, key).setDisplaySize(blockSize, blockSize).setOrigin(0).setInteractive();
+    //                 this.puzzleGrid[row][col] = { tile: tile, key: key };
+    
+    //                 this.puzzleGroup.add(tile);
+    
+    //                 ((r, c) => {
+    //                     tile.on('pointerdown', () => {
+    //                         this.moveTile(r, c);
+    //                     });
+    //                 })(row, col);
+    //             } else {
+    //                 this.emptyBlockPosition = { row, col }; // Initial empty block position
+    //             }
+    //         }
+    //     }
+    
+        
+    //     // Debugging: Log the initial state
+    //     console.log("Puzzle initialized. Empty block at:", this.emptyBlockPosition);
+    // }
+        
+    // setupPuzzle() {
+    //     var startX = this.blockX;
+    //     var startY = this.blockY;
+    //     var blockSize = this.blockSize;
+    
+    //     // Generate the puzzle keys for the selected color
+    //     var puzzleKeys = [];
+    //     for (var variant = 1; variant <= 8; variant++) {
+    //         puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
+    //     }
+    
+    //     // Shuffle keys and add the empty block
+    //     var isSolvable = false;
+    //     var positions;
+    
+    //     while (!isSolvable) {
+    //         Phaser.Utils.Array.Shuffle(puzzleKeys);
+    //         var emptyIndex = Phaser.Math.Between(0, 8); // Random index for the empty block
+    //         positions = [];
+    
+    //         for (var i = 0; i < 9; i++) {
+    //             if (i === emptyIndex) {
+    //                 positions.push(null); // Add null for the empty block
+    //             } else {
+    //                 positions.push(puzzleKeys.pop()); // Add shuffled puzzle key
+    //             }
+    //         }
+    
+    //         // Check if the puzzle is solvable
+    //         isSolvable = this.isSolvable(positions);
+    //     }
+    
+    //     // Reset the puzzle group and the grid
+    //     this.puzzleGroup = this.add.group();
+    //     this.puzzleGrid = Array(3).fill().map(() => Array(3).fill(null)); // 2D array for 3x3 grid
+    
+    //     // Place the tiles and initialize the empty block
+    //     for (var row = 0; row < 3; row++) {
+    //         for (var col = 0; col < 3; col++) {
+    //             var index = row * 3 + col;
+    //             var key = positions[index];
+    
+    //             if (key !== null) {
+    //                 var x = startX + col * (blockSize + this.blockGap);
+    //                 var y = startY + row * (blockSize + this.blockGap);
+    
+    //                 var tile = this.add.image(x, y, key).setDisplaySize(blockSize, blockSize).setOrigin(0).setInteractive();
+    //                 this.puzzleGrid[row][col] = { tile: tile, key: key };
+    
+    //                 this.puzzleGroup.add(tile);
+    
+    //                 ((r, c) => {
+    //                     tile.on('pointerdown', () => {
+    //                         this.moveTile(r, c);
+    //                     });
+    //                 })(row, col);
+    //             } else {
+    //                 this.emptyBlockPosition = { row, col }; // Initial empty block position
+    //             }
+    //         }
+    //     }
+    
+    //     // Debugging: Log the initial state
+    //     console.log("Puzzle initialized. Empty block at:", this.emptyBlockPosition);
+    // }
+    
+    // // Check if the puzzle is solvable
+    // isSolvable(positions) {
+    //     // Flatten the array and remove null (empty block)
+    //     var flatPositions = positions.filter(key => key !== null);
+    
+    //     // Count inversions
+    //     var inversions = 0;
+    //     for (var i = 0; i < flatPositions.length; i++) {
+    //         for (var j = i + 1; j < flatPositions.length; j++) {
+    //             if (flatPositions[i] > flatPositions[j]) {
+    //                 inversions++;
+    //             }
+    //         }
+    //     }
+    
+    //     // For 3x3 puzzle (odd grid width), solvability depends only on inversions being even
+    //     return inversions % 2 === 0;
+    // }
+    
     setupPuzzle() {
         var startX = this.blockX;
         var startY = this.blockY;
         var blockSize = this.blockSize;
     
         // Generate the puzzle keys for the selected color
-        var puzzleKeys = [];
+        var basePuzzleKeys = [];
         for (var variant = 1; variant <= 8; variant++) {
-            puzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
+            basePuzzleKeys.push('color_' + this.puzzleColor + '_variant_' + variant);
         }
     
-        // Shuffle keys and add the empty block
-        Phaser.Utils.Array.Shuffle(puzzleKeys);
-        var emptyIndex = Phaser.Math.Between(0, 8); // Random index for the empty block
-        var positions = [];
+        var isSolvable = false;
+        var positions;
     
-        for (var i = 0; i < 9; i++) {
-            if (i === emptyIndex) {
-                positions.push(null); // Add null for the empty block
-            } else {
-                positions.push(puzzleKeys.pop()); // Add shuffled puzzle key
+        while (!isSolvable) {
+            // Copy the base puzzle keys to ensure a fresh set for each attempt
+            var puzzleKeys = [...basePuzzleKeys];
+            Phaser.Utils.Array.Shuffle(puzzleKeys);
+            
+            // Random index for the empty block
+            var emptyIndex = Phaser.Math.Between(0, 8);
+            positions = [];
+    
+            for (var i = 0; i < 9; i++) {
+                if (i === emptyIndex) {
+                    positions.push(null); // Add null for the empty block
+                } else {
+                    positions.push(puzzleKeys.pop()); // Add shuffled puzzle key
+                }
             }
+    
+            // Check if the puzzle is solvable
+            isSolvable = this.isSolvable(positions);
         }
     
         // Reset the puzzle group and the grid
@@ -131,11 +286,28 @@ export default class PuzzleGameScene extends Phaser.Scene {
             }
         }
     
-        
         // Debugging: Log the initial state
         console.log("Puzzle initialized. Empty block at:", this.emptyBlockPosition);
     }
-        
+    
+    // Check if the puzzle is solvable
+    isSolvable(positions) {
+        // Flatten the array and remove null (empty block)
+        var flatPositions = positions.filter(key => key !== null);
+    
+        // Count inversions
+        var inversions = 0;
+        for (var i = 0; i < flatPositions.length; i++) {
+            for (var j = i + 1; j < flatPositions.length; j++) {
+                if (flatPositions[i] > flatPositions[j]) {
+                    inversions++;
+                }
+            }
+        }
+    
+        // For 3x3 puzzle (odd grid width), solvability depends only on inversions being even
+        return inversions % 2 === 0;
+    }    
 
     moveTile(row, col) {
         // Check if the clicked tile is adjacent to the empty block
@@ -166,11 +338,6 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 tileData.tile.setInteractive().on('pointerdown', () => {
                     this.moveTile(emptyRow, emptyCol);  // Move the empty block to this tile's position
                 });
-    
-                // emptyTileData.tile.removeAllListeners('pointerdown');
-                // emptyTileData.tile.setInteractive().on('pointerdown', () => {
-                //     this.moveTile(row, col);  // Move this tile to the empty space
-                // });
 
                 this.puzzleGrid[emptyRow][emptyCol] = tileData; // Move clicked tile to empty space
                 this.puzzleGrid[row][col] = emptyTileData; // Move empty tile to clicked tile's position
