@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 
 import PuzzleGameScene from './scenes/PuzzleGameScene'
+import WinScene from './scenes/WinScene'
 
 const config = {
 	type: Phaser.AUTO,
@@ -13,7 +14,7 @@ const config = {
 			gravity: { y: 200 },
 		},
 	},
-	scene: [PuzzleGameScene],
+	scene: [PuzzleGameScene, WinScene],
 }
 
 export default new Phaser.Game(config)

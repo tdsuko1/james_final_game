@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 
 export default class PuzzleGameScene extends Phaser.Scene {
     constructor() {
-        super('PuzzleGameScene');
+        super('puzzle-game-scene');
     }
 
     init() {
@@ -42,6 +42,12 @@ export default class PuzzleGameScene extends Phaser.Scene {
             this.startGame(); // Start the game and change the color
         });
 
+        this.moveLabel = this.add.text(10, 10, "Moves: 0", {
+            fontSize: "50px",
+            color: "white",
+            backgroundColor: "black",
+        }).setDepth(1)
+
         // Initially, we set up the preview with a random color
         this.startGame();
     }
@@ -58,24 +64,53 @@ export default class PuzzleGameScene extends Phaser.Scene {
             this.puzzleGroup.clear(true, true);  // Remove all puzzle tiles
         }
 
+        this.moves = 0
+		this.moveLabel.setText(`Moves: ${this.moves}`)
+
         // Create the new preview and puzzle with the selected color
         this.createPreview();
         this.setupPuzzle();
     }
 
+    // createPreview() {
+    //     this.previewGroup = this.add.group();
+
+    //     for (var i = 0; i < 8; i++) {
+    //         var key = 'color_' + this.puzzleColor + '_variant_' + (i + 1); // Correct variant for preview
+    //         var x = this.previewX + (i % 3) * (this.previewSize + this.previewGap);
+    //         var y = this.previewY + Math.floor(i / 3) * (this.previewSize + this.previewGap);
+
+    //         this.previewGroup.add(
+    //             this.add.image(x, y, key).setDisplaySize(this.previewSize, this.previewSize).setOrigin(0)
+    //         );
+    //     }
+    // }
+
     createPreview() {
         this.previewGroup = this.add.group();
-
-        for (var i = 0; i < 8; i++) {
-            var key = 'color_' + this.puzzleColor + '_variant_' + (i + 1); // Correct variant for preview
-            var x = this.previewX + (i % 3) * (this.previewSize + this.previewGap);
-            var y = this.previewY + Math.floor(i / 3) * (this.previewSize + this.previewGap);
-
-            this.previewGroup.add(
-                this.add.image(x, y, key).setDisplaySize(this.previewSize, this.previewSize).setOrigin(0)
-            );
+        this.previewGrid = Array(3).fill().map(() => Array(3).fill(null)); // 2D array for 3x3 preview grid
+    
+        var index = 0;
+        for (var row = 0; row < 3; row++) {
+            for (var col = 0; col < 3; col++) {
+                if (index < 8) { // Only place 8 tiles, last one is empty
+                    var key = 'color_' + this.puzzleColor + '_variant_' + (index + 1);
+                    var x = this.previewX + col * (this.previewSize + this.previewGap);
+                    var y = this.previewY + row * (this.previewSize + this.previewGap);
+    
+                    var tile = this.add.image(x, y, key)
+                        .setDisplaySize(this.previewSize, this.previewSize)
+                        .setOrigin(0);
+    
+                    this.previewGrid[row][col] = { tile: tile, key: key };
+                    this.previewGroup.add(tile);
+                } else {
+                    this.previewGrid[row][col] = null; // Empty space
+                }
+                index++;
+            }
         }
-    }
+    }    
     
     setupPuzzle() {
         var startX = this.blockX;
@@ -201,10 +236,13 @@ export default class PuzzleGameScene extends Phaser.Scene {
                 // Debugging: Log the state after movement
                 console.log("Moved tile at position", row, col, "to empty space at", emptyRow, emptyCol);
                 console.log("Puzzle grid state:", this.puzzleGrid);
+                this.moves += 1
+				this.moveLabel.setText(`Moves: ${this.moves}`)
 
                 // Check if puzzle is solved after each move
                 if (this.isPuzzleSolved()) {
                     console.log("Congratulations! Puzzle solved.");
+                    this.scene.start("win-scene", { moves: this.moves })
                 }
             }
         } else {
@@ -212,20 +250,43 @@ export default class PuzzleGameScene extends Phaser.Scene {
         }
     }   
     
+    // isPuzzleSolved() {
+    //     // Check if each tile is in the correct position
+    //     var variant = 1;
+    //     for (var row = 0; row < 3; row++) {
+    //         for (var col = 0; col < 3; col++) {
+    //             if (this.puzzleGrid[row][col]) {
+    //                 var key = 'color_' + this.puzzleColor + '_variant_' + variant;
+    //                 if (this.puzzleGrid[row][col].key !== key) {
+    //                     return false; // Puzzle not solved
+    //                 }
+    //                 variant++;
+    //             }
+    //         }
+    //     }
+    //     return true; // Puzzle solved
+    // }
+
     isPuzzleSolved() {
-        // Check if each tile is in the correct position
-        var variant = 1;
         for (var row = 0; row < 3; row++) {
             for (var col = 0; col < 3; col++) {
-                if (this.puzzleGrid[row][col]) {
-                    var key = 'color_' + this.puzzleColor + '_variant_' + variant;
-                    if (this.puzzleGrid[row][col].key !== key) {
-                        return false; // Puzzle not solved
+                var previewTile = this.previewGrid[row][col];
+                var puzzleTile = this.puzzleGrid[row][col];
+    
+                // If preview has a tile here, puzzle should have the same key
+                if (previewTile) {
+                    if (!puzzleTile || puzzleTile.key !== previewTile.key) {
+                        return false; // Tiles do not match
                     }
-                    variant++;
+                } else {
+                    // If preview has an empty space, puzzle should also be empty
+                    if (puzzleTile) {
+                        return false; // Puzzle has a tile where preview has empty space
+                    }
                 }
             }
         }
-        return true; // Puzzle solved
+        return true; // Puzzle matches preview
     }
+    
 }
