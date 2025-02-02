@@ -72,20 +72,6 @@ export default class PuzzleGameScene extends Phaser.Scene {
         this.setupPuzzle();
     }
 
-    // createPreview() {
-    //     this.previewGroup = this.add.group();
-
-    //     for (var i = 0; i < 8; i++) {
-    //         var key = 'color_' + this.puzzleColor + '_variant_' + (i + 1); // Correct variant for preview
-    //         var x = this.previewX + (i % 3) * (this.previewSize + this.previewGap);
-    //         var y = this.previewY + Math.floor(i / 3) * (this.previewSize + this.previewGap);
-
-    //         this.previewGroup.add(
-    //             this.add.image(x, y, key).setDisplaySize(this.previewSize, this.previewSize).setOrigin(0)
-    //         );
-    //     }
-    // }
-
     createPreview() {
         this.previewGroup = this.add.group();
         this.previewGrid = Array(3).fill().map(() => Array(3).fill(null)); // 2D array for 3x3 preview grid
@@ -249,23 +235,6 @@ export default class PuzzleGameScene extends Phaser.Scene {
             console.log("Tile at", row, col, "is not adjacent to empty space.");
         }
     }   
-    
-    // isPuzzleSolved() {
-    //     // Check if each tile is in the correct position
-    //     var variant = 1;
-    //     for (var row = 0; row < 3; row++) {
-    //         for (var col = 0; col < 3; col++) {
-    //             if (this.puzzleGrid[row][col]) {
-    //                 var key = 'color_' + this.puzzleColor + '_variant_' + variant;
-    //                 if (this.puzzleGrid[row][col].key !== key) {
-    //                     return false; // Puzzle not solved
-    //                 }
-    //                 variant++;
-    //             }
-    //         }
-    //     }
-    //     return true; // Puzzle solved
-    // }
 
     isPuzzleSolved() {
         for (var row = 0; row < 3; row++) {
